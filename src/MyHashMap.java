@@ -1,113 +1,209 @@
+import java.util.StringJoiner;
+
 public class MyHashMap<K, V> {
     private static class Node<K, V> {
-        K key;
-        V value;
-        Node<K, V> next;
+        final int hash;
+        private K key;
+        private V value;
+        private Node<K, V> nextNode;
 
-        public Node(K key, V value) {
+        Node(int hash, K key, V value) {
+            this.hash = hash;
             this.key = key;
             this.value = value;
-            this.next = null;
+            this.nextNode = null;
         }
 
         public K getKey() {
             return key;
         }
 
+        public void setKey(K key) {
+            this.key = key;
+        }
+
         public V getValue() {
             return value;
         }
+
+        public void setValue(V value) {
+            this.value = value;
+        }
+
+        public Node<K, V> getNextNode() {
+            return nextNode;
+        }
+
+        public void setNextNode(Node<K, V> nextNode) {
+            this.nextNode = nextNode;
+        }
+
+        @Override
+        public String toString() {
+            return key + " -> " + value;
+        }
     }
-
-    private Node<K, V> head;
     private int size;
+    private Node<K, V> firstNode;
+    private Node<K, V> lastNode;
 
-    // constructor
-    public MyHashMap() {
-        head = null;
+    private void setNullFirstLastNodes(){
+        firstNode = null;
+        lastNode = null;
         size = 0;
     }
 
-    public void put(K key, V value) {
-        if (head == null) {
-            head = new Node<K, V>(key, value);
-            size++;
-            return;
-        }
-        Node<K, V> currentNode = head;
-        while (currentNode.next != null) {
-            if (currentNode.getKey().equals(key)) {
-                currentNode.value = value;
-                return;
+    private Node<K, V> getNodeByKey(K key){
+        Node<K, V> node = firstNode;
+        while (node!=null){
+            if(node.key.equals(key)){
+                return node;
             }
-            currentNode = currentNode.next;
+            node = node.getNextNode();
         }
-        if (currentNode.getKey().equals(key)) {
-            currentNode.value = value;
-        } else {
-            currentNode.next = new Node<K, V>(key, value);
+        return node;
+    }
+
+    private Node<K, V> getNodeByNext(Node<K, V> searchNode){
+        if (searchNode==null){
+            return null;
+        }
+        Node<K, V> node = firstNode;
+        while (node!=null){
+
+            if (node.getNextNode()==null){
+                return null;
+            }
+
+            if(node.getNextNode().equals(searchNode)){
+                return node;
+            }
+            node = node.getNextNode();
+        }
+        return node;
+    }
+
+
+
+    public void put(K key, V value) {
+        if (get(key) == null) {
+            int hash = key.hashCode();
+            Node<K, V> node = new Node<>(hash, key, value);
+
+            if (size == 0) {
+                firstNode = node;
+            } else {
+                lastNode.setNextNode(node);
+            }
+            lastNode = node;
+
             size++;
         }
     }
 
     public void remove(K key) {
-        Node<K, V> currentNode = head;
-        Node<K, V> previousNode = null;
-
-        while (currentNode != null) {
-            if (currentNode.getKey().equals(key)) {
-                if (previousNode != null)
-                    previousNode.next = currentNode.next;
-                else
-                    head = currentNode.next;
-                size--;
-                return;
-            }
-            previousNode = currentNode;
-            currentNode = currentNode.next;
+        if (size == 0){
+            return;
         }
-    }
 
-    public V get(K key) {
-        Node<K, V> currentNode = head;
-        while (currentNode != null) {
-            if (currentNode.getKey().equals(key))
-                return currentNode.getValue();
-            currentNode = currentNode.next;
+        if (size==1){
+            setNullFirstLastNodes();
+            return;
         }
-        return null;
+
+        Node<K, V> findNode = getNodeByKey(key);
+        if (findNode == null){
+            return;
+        }
+
+        Node<K, V> prevNode = getNodeByNext(findNode);
+
+        if (prevNode==null){
+            firstNode = findNode.getNextNode();
+        } else if (findNode.getNextNode()==null){
+            prevNode.setNextNode(null);
+            lastNode = prevNode;
+        } else {
+            prevNode.setNextNode(findNode.getNextNode());
+        }
+
+        size--;
     }
 
     public void clear() {
-        head = null;
-        size = 0;
+        if (size==0){
+            return;
+        }
+
+        Node<K, V> currentNode = firstNode;
+
+        while (currentNode!=null){
+
+            currentNode.setKey(null);
+            currentNode.setValue(null);
+            currentNode = currentNode.getNextNode();
+        }
+
+        setNullFirstLastNodes();
     }
 
     public int size() {
         return size;
     }
 
+    public V get(K key) {
+        Node<K, V> node = getNodeByKey(key);
+        if (node == null) {
+            return null;
+        }
+        return node.getValue();
+
+    }
+
+
+    @Override
+    public String toString() {
+        if (size == 0) {
+            return "";
+        }
+
+        StringJoiner newString = new StringJoiner(", ");
+        newString.add(firstNode.toString());
+
+        Node<K, V> node = firstNode.getNextNode();
+        while (node != null) {
+            newString.add(node.toString());
+            node = node.getNextNode();
+        }
+        return newString.toString();
+    }
 
     public static void main(String[] args) {
         MyHashMap<String, Integer> map = new MyHashMap<>();
+        map.put("Abrams", 31);
+        map.put("Abrams", 1);
+        map.put("Challenger", 14);
+        map.put("Leopard", 88);
 
-        map.put("Leopard 1", 14);
-        map.put("Leopard 2", 88);
-        map.put("Challenger", 12);
-
-        // Test put & size
+        //  Put & size test
+        System.out.println(map);
         System.out.println(map.size());
 
-        //  Test get
-        System.out.println(map.get("Leopard 1"));
+        // Get test
+        System.out.println(map.get("Challenger"));
 
-        //  Test remove
-        map.remove("Leopard 1");
-        System.out.println(map.size());
+        //  Remove test
+        map.remove("Challenger");
+        System.out.println(map);
 
-        //  Test clear
+        //  Clear test
         map.clear();
         System.out.println(map.size());
 
+        //  Stretching test
+        for (int i = 0; i < 234; i++) {
+            map.put("test + " + i, i);
+        }
+        System.out.println("map.size() = " + map.size());
     }
 }
