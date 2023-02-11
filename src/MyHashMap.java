@@ -1,143 +1,140 @@
 import java.util.Arrays;
+import java.util.Objects;
 
 public class MyHashMap<K, V> {
-
-    private static class Entry<K, V> {
-
-         final K key;
-         V value;
-        private Entry<K,V> next;
-
-        Entry(K key, V value, Entry<K, V> next) {
-
-            this.key = key;
-            this.value = value;
-            this.next = next;
-        }
-    }
-
     private int size = 0;
-    private final int MAX_SIZE = 16;
-    private final Entry<K, V>[] table;
+    private final Node<K, V>[] nodes;
 
-    public MyHashMap () {
-        this.table = new Entry[MAX_SIZE];
+    public MyHashMap() {
+        int INITIAL_CAPACITY = 16;
+        nodes = new Node[INITIAL_CAPACITY];
     }
 
+    public MyHashMap(int size, Node<K, V>[] nodes) {
+        this.size = size;
+        this.nodes = nodes;
+    }
 
     public void put(K key, V value) {
-        int i = hash(key);
-        for (Entry<K, V> x = table[i]; x != null; x = x.next) {
-            if (key.equals(x.key)) {
-                x.value = value;
-                return;
+        int index = Objects.hashCode(key) % nodes.length;
+        Node<K, V> node = nodes[index];
+
+        if (node == null) {
+            node = new Node<>(key, value, null);
+            nodes[index] = node;
+            size++;
+        } else {
+            while (node != null) {
+                if (node.key.equals(key)) {
+                    node.value = value;
+                    return;
+                }
+                node = node.next;
             }
+            node = new Node<>(key, value, nodes[index]);
+            nodes[index] = node;
+            size++;
         }
-        table[i] = new Entry<>(key, value, table[i]);
-        size++;
     }
 
+    public V get(K key) {
+        int index = Objects.hashCode(key) % nodes.length;
+        Node<K, V> node = nodes[index];
+
+        while (node != null) {
+            if (node.key.equals(key)) {
+                return node.value;
+            }
+            node = node.next;
+        }
+
+        return null;
+    }
 
     public void remove(K key) {
-        int i = hash(key);
-        int count = 0;
+        int index = Objects.hashCode(key) % nodes.length;
+        Node<K, V> node = nodes[index];
+        Node<K,V> previous = null;
 
-        for (Entry<K, V> x = table[i]; x != null; x = x.next) {
-            ++count;
-            if (key.equals(x.key) && x.next == null && count == 1) {
-                table[i] = null;
+        while (node != null) {
+            if (node.key.equals(key)) {
+                if (previous == null) {
+                    nodes[index] = node.next;
+                } else {
+                    previous.next = node.next;
+                }
                 size--;
                 return;
             }
-            if (key.equals(x.key) && x.next != null && count == 1) {
-                x = x.next;
-                table[i] = x;
-                size--;
-                return;
-            }
-            assert x.next != null;
-            if (key.equals(x.next.key) && x.next.next != null) {
-                x.next = x.next.next;
-                size--;
-                return;
-            }
-
-            if (key.equals(x.next.key) && x.next.next == null) {
-                x.next = null;
-                size--;
-                return;
-            }
+            previous = node;
+            node = node.next;
         }
     }
-
-
-    public void clear() {
-        if (size > 0) {
-            size = 0;
-            Arrays.fill(table, null);
-        }
-    }
-
 
     public int size() {
         return size;
     }
 
-
-    public Object get(K key) {
-        int i = hash(key);
-        for (Entry<K, V> x = table[i]; x != null; x = x.next) {
-            if (key.equals(x.key)) {
-                return x.value;
-            }
-        }
-        return null;
-    }
-
-    private int hash(K key) {
-        return (key.hashCode() & 0x7fffffff) % MAX_SIZE;
+    public void clear() {
+        Arrays.fill(nodes, null);
+        size = 0;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (Entry<K, V> kvEntry : table) {
-            Entry<K, V> node = kvEntry;
+        for (Node<K, V> node : nodes) {
             while (node != null) {
-                sb.append(node.key).append(" -> ").append(node.value).append("; ");
+                sb.append(node.key).append(" -> ").append(node.value).append("; "+ "\n");
                 node = node.next;
             }
         }
+        sb.delete(sb.length() - 2, sb.length());
         return sb.toString();
     }
-    public static void main(String[] args) {
-        MyHashMap<String, Integer> map = new MyHashMap<>();
-        System.out.println(map.size());
-        map.put("Abrams", 1);
-        map.put("Abrams", 31);
-        map.put("Challenger", 14);
-        map.put("Leopard", 88);
 
-        //  Put & size test
-        System.out.println(map);
-        System.out.println(map.size());
+    private static class Node<K, V> {
+        private final K key;
+        private V value;
+        private Node<K, V> next;
 
-        // Get test
-        System.out.println(map.get("Challenger"));
-
-        //  Remove test
-        map.remove("Challenger");
-        System.out.println(map);
-        System.out.println(map.size());
-
-        //  Clear test
-        map.clear();
-        System.out.println(map.size());
-
-        //  Stretching test
-        for (int i = 0; i < 234; i++) {
-            map.put("test + " + i, i);
+        Node(K key, V value, Node<K, V> next) {
+            this.key = key;
+            this.value = value;
+            this.next = next;
         }
-        System.out.println("map.size() = " + map.size());
+
+        @Override
+        public String toString() {
+            return key + " -> " + value;
+        }
+
+    }
+
+    public static void main(String[] args) {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+
+        System.out.println("Size: " + map.size);
+        map.put(1, "Abrams");
+        map.put(2, "Leopard 1");
+        map.put(3, "T-90");
+        map.put(2, "Leopard 2");
+        map.put(4, "Challenger");
+        System.out.println(map);
+
+        System.out.println("Size: " + map.size());
+        System.out.println(map.get(3));
+        map.remove(3);
+        System.out.println("Remove element 3");
+        System.out.println("Size: " + map.size);
+        System.out.println(map);
+        map.clear();
+        System.out.println("Size: " + map.size);
+
+        for (int i = 0; i < 242; i++) {
+            map.put(i, "");
+        }
+        System.out.println("Size: " + map.size());
     }
 }
+
