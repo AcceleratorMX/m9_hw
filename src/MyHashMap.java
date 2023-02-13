@@ -1,5 +1,4 @@
 import java.util.Arrays;
-import java.util.Objects;
 
 public class MyHashMap<K, V> {
     private int size = 0;
@@ -16,7 +15,7 @@ public class MyHashMap<K, V> {
     }
 
     public void put(K key, V value) {
-        int index = Objects.hashCode(key) % nodes.length;
+        int index = key.hashCode() % nodes.length;
         Node<K, V> node = nodes[index];
 
         if (node == null) {
@@ -38,7 +37,7 @@ public class MyHashMap<K, V> {
     }
 
     public V get(K key) {
-        int index = Objects.hashCode(key) % nodes.length;
+        int index = key.hashCode() % nodes.length;
         Node<K, V> node = nodes[index];
 
         while (node != null) {
@@ -52,7 +51,7 @@ public class MyHashMap<K, V> {
     }
 
     public void remove(K key) {
-        int index = Objects.hashCode(key) % nodes.length;
+        int index = key.hashCode() % nodes.length;
         Node<K, V> node = nodes[index];
         Node<K,V> previous = null;
 
@@ -85,7 +84,7 @@ public class MyHashMap<K, V> {
         StringBuilder sb = new StringBuilder();
         for (Node<K, V> node : nodes) {
             while (node != null) {
-                sb.append(node.key).append(" -> ").append(node.value).append("; "+ "\n");
+                sb.append(node.key).append(" -> ").append(node.value).append("; ");
                 node = node.next;
             }
         }
@@ -132,7 +131,8 @@ public class MyHashMap<K, V> {
         System.out.println("Size: " + map.size);
 
         for (int i = 0; i < 242; i++) {
-            map.put(i, "");
+            map.put(i, "i");
+//            System.out.println(map);
         }
         System.out.println("Size: " + map.size());
     }
